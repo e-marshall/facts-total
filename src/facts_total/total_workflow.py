@@ -74,20 +74,23 @@ class WorkflowTotaler:
             xr.Dataset
                 Dataset with added 'file' dimension and transposed dimensions.
             """
-            
-            #check this files dims against the provided pyear values
+
+            # check this files dims against the provided pyear values
             pyear_start = self.pyear_start
             pyear_end = self.pyear_end
             pyear_step = self.pyear_step
 
-            if ds['years'].min().item() != pyear_start or ds['years'].max().item() != pyear_end:
+            if (
+                ds["years"].min().item() != pyear_start
+                or ds["years"].max().item() != pyear_end
+            ):
                 message = click.wrap_text(
                     f"⚠️ ⚠️ Warning ⚠️ ⚠️: The dataset being processed has a years dimension from {ds['years'].min().item()} to {ds['years'].max().item()}, which does not match the provided pyear-start ({pyear_start}) and pyear-end ({pyear_end}). Subsetting dataset to provided pyear values.",
                     width=70,
                 )
                 ds = ds.sel(years=slice(pyear_start, pyear_end))
 
-            step = ds['years'].diff('years')
+            step = ds["years"].diff("years")
             if len(np.unique(step.data)) != 1 or np.unique(step.data)[0] != pyear_step:
                 message = click.wrap_text(
                     f"⚠️ ⚠️ Warning ⚠️ ⚠️: The dataset being processed has a years dimension with step values {np.unique(step.data)}, which does not match the provided pyear-step ({pyear_step}). Check that you did not make a mistake specifying the totaling command or the individual modules.",
