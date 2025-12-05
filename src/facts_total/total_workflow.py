@@ -3,10 +3,6 @@ import xarray as xr
 import numpy as np
 from pathlib import Path
 import click
-import logging
-
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
 
 class WorkflowTotaler:
@@ -212,7 +208,6 @@ class WorkflowTotaler:
             "units": "mm",
             "missing_value": nc_missing_value,
         }
-        logging.info("totaled cube attrs: %s", total_ds.attrs)
         setattr(self, "totaled_ds", total_ds)
         return ds
 
@@ -245,5 +240,4 @@ class WorkflowTotaler:
             else:
                 attrs_clean[key] = value
         totaled_ds.attrs = attrs_clean
-        logging.info("writing totaled cube attrs: %s", totaled_ds.attrs)
         totaled_ds.to_netcdf(outpath, encoding=encoding)
