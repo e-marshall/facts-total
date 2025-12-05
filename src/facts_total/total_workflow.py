@@ -38,6 +38,12 @@ class WorkflowTotaler:
             Name of the workflow.
         paths_list : list of str
             List of file paths to component-level projection datasets.
+        pyear_start : int
+            Start year for projections.
+        pyear_end : int
+            End year for projections.
+        pyear_step : int
+            Year step for projections.
         """
         self.name = name
         self.paths_list = paths_list
@@ -63,7 +69,8 @@ class WorkflowTotaler:
 
         def preprocess_fn(ds: xr.Dataset) -> xr.Dataset:
             """
-            Minimal preprocess function to add a 'file' dimension.
+            Preprocess function to add a 'file' dimension. This function is applied to each dataset as its read in. It checks that the min/max/step of the years dimension matches the provided pyear values, and adds a 'file' dimension with source info.
+            It also adds the filename of the source file as the entry for the file dimension.
 
             Parameters
             ----------
