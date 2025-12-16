@@ -1,5 +1,9 @@
 import click
 from facts_total.total_workflow import WorkflowTotaler
+import logging
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 @click.command()
@@ -54,9 +58,12 @@ def main(name, item, output_path, pyear_start, pyear_end, pyear_step):
         pyear_end=pyear_end,
         pyear_step=pyear_step,
     )
-
+    totaler.print_files()
     # Read files and total projections
     totaler.get_projections()
+
+    # Format projections
+    totaler.format_projections()
 
     # Calc sum
     totaler.total_projections()
