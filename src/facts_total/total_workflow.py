@@ -3,6 +3,10 @@ import xarray as xr
 import numpy as np
 from pathlib import Path
 import click
+import logging
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 class WorkflowTotaler:
@@ -50,6 +54,14 @@ class WorkflowTotaler:
         self.pyear_start = pyear_start
         self.pyear_end = pyear_end
         self.pyear_step = pyear_step
+
+    def print_files(self):
+        """
+        Prints the list of file paths in paths_list.
+        """
+        click.echo("Files to be totaled:")
+        for path in self.paths_list:
+            click.echo(f"- {path}")
 
     def get_projections(self) -> xr.Dataset:
         """
@@ -138,7 +150,10 @@ class WorkflowTotaler:
             preprocess=preprocess_fn,
             chunks="auto",
         )
+        setattr(self, "combined_ds", combined_ds)
 
+    def format_projections(self) -> xr.Dataset:
+        combined_ds = getattr(self, "combined_ds")
         # Check dimensions of each dataset
         if len(np.unique(combined_ds["year_step"])) > 1:
             step_message = click.wrap_text(
@@ -147,19 +162,30 @@ class WorkflowTotaler:
             )
             click.echo(step_message)
         # Drop year_step dim after check
-        combined_ds = combined_ds.squeeze().drop_vars("year_step")
-
+        combined_ds = combined_ds.squeeze(dim="year_step", drop=True)
         # Format lat/lon variables (want them to exist along locations dim only, not files)
         # first downcast
+        if "locations" not in combined_ds.coords:
+            combined_ds = combined_ds.set_coords("locations")
+        combined_ds = combined_ds.set_coords(["lat", "lon"])
         coords_ls = ["lat", "lon"]
         for coord in coords_ls:
-            combined_ds[coord] = combined_ds[coord].astype("float32").load()
+            combined_ds[coord] = combined_ds[coord].astype("float32")
+            combined_ds[coord].load()
         # Ensure that lat/lon do not vary along file dim before dropping
-        for loc in combined_ds["locations"].values:
+        locations = combined_ds["locations"].values
+        if np.isscalar(locations) or locations.ndim == 0:
+            locations = [locations.item() if hasattr(locations, "item") else locations]
+        else:
+            locations = locations.tolist()
+        for loc in locations:
             for coord in coords_ls:
                 assert (
                     len(np.unique(combined_ds[coord].sel(locations=loc).values)) == 1
-                ), f"{coord} variable varies along 'file' dimension for location {loc}."
+                ), (
+                    f"{coord} variable varies along 'file' dimension for location {loc}: {np.unique(combined_ds[coord].sel(locations=loc).values)}."
+                )
+
         # detach lat/lon from file dim
         lat_keep = combined_ds.lat.isel(file=0)
         lon_keep = combined_ds.lon.isel(file=0)
@@ -199,23 +225,18 @@ class WorkflowTotaler:
             "No projections dataset found. Please run get_projections first."
         )
         ds = getattr(self, "projections_ds")
-        ds_attrs = ds.attrs.copy()
+        # ds_attrs = ds.attrs.copy()
 
-        total_ds = ds["sea_level_change"].sum(dim="file")
-        total_ds = total_ds.to_dataset(name="sea_level_change")
-        total_ds["lat"] = ("locations", ds["lat"].data)
-        total_ds["lon"] = ("locations", ds["lon"].data)
-        total_ds = total_ds.transpose("samples", "years", "locations")
-
-        total_ds.attrs = ds_attrs
+        ds = ds.sum(dim="file")
 
         # Define the missing value for the netCDF files
-        nc_missing_value = np.nan  # np.iinfo(np.int16).min
-        total_ds["sea_level_change"].attrs = {
-            "units": "mm",
-            "missing_value": nc_missing_value,
-        }
-        setattr(self, "totaled_ds", total_ds)
+        # nc_missing_value = np.nan  # np.iinfo(np.int16).min
+        # total_ds["sea_level_change"].attrs = {
+        #    "units": "mm",
+        #    "missing_value": nc_missing_value,
+        # }
+        setattr(self, "totaled_ds", ds)
+
         return ds
 
     def write_totaled_projections(self, outpath: str):
@@ -248,3 +269,4 @@ class WorkflowTotaler:
                 attrs_clean[key] = value
         totaled_ds.attrs = attrs_clean
         totaled_ds.to_netcdf(outpath, encoding=encoding)
+        logger.info("Totaled projections written to %s", outpath)
