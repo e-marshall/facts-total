@@ -11,20 +11,23 @@ values of --pyear-start in these modules. Received: [YYYY YYYY]. ⚠️⚠️
 ## Example running cli
 Using output from an 'experiment' run using docker compose that multiple modules. Can specify any number of `--item` inputs, include a path to a module-level output for each. 
 
-Clone repo (`new_pkg` branch):
+Clone repo:
 ```shell
 git clone git@github.com:fact-sealevel/facts-total.git
 ```
 
-Run facts-total in a container. Mount the directory containing the input data as a volume, and the directory where you'd like to write the output file. Then, use the file names in the actual arguments:
+Run facts-total in a container. Mount the directory containing the input data as a volume, and the directory where you'd like to write the output file. Then, use the file names in the actual arguments. Pass the desired `pyear-start`, `pyear-end`, and `pyear-step`:
 ```shell
 docker run --rm \
 -v /path/to/input/data:/mnt/total_in \
 -v /path/to/output/data:/mnt/total_out \
-ghcr.io/fact-sealevel/facts-total:latest \
+ghcr.io/fact-sealevel/facts-total:v0.1.0 \
 --item /mnt/total_in/module_output_1.nc \
 --item /mnt/total_in/module_output_2.nc \
 --item /mnt/total_in/module_output_3.nc \
+--pyear-start 2020 \
+--pyear-end 2150 \
+--pyear-step 10 \
 --output-path /mnt/total_out/totaled_output.nc
 ```
 
@@ -33,13 +36,25 @@ ghcr.io/fact-sealevel/facts-total:latest \
 Usage: facts-total [OPTIONS]
 
 Options:
-  --name TEXT         Name of the workflow being totaled.  [default:
-                      my_workflow_name]
-  --item TEXT         Paths to component-level projection netcdf files to be
-                      totaled.  [required]
-  --output-path TEXT  Path to write totaled projections netcdf file.
-                      [required]
-  --help              Show this message and exit.
+  --name TEXT            Name of the workflow being totaled.  [default:
+                         my_workflow_name]
+  --item TEXT            Paths to component-level projection netcdf files to
+                         be totaled.  [required]
+  --pyear-start INTEGER  Enter the pyear-start value used for the individual
+                         modules. If modules used different pyear-start
+                         values, enter the one you would like used for the
+                         totaled output.  [required]
+  --pyear-end INTEGER    Enter the pyear-end value used for the individual
+                         modules. If modules used different pyear-end values,
+                         enter the one you would like used for the totaled
+                         output.  [required]
+  --pyear-step INTEGER   Enter the pyear-step value used for the individual
+                         modules. If modules used different pyear-step values,
+                         enter the one you would like used for the totaled
+                         output.  [required]
+  --output-path TEXT     Path to write totaled projections netcdf file.
+                         [required]
+  --help                 Show this message and exit.
 ```
 
 See the above by running:
