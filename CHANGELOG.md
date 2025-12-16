@@ -11,4 +11,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - Initial release
 
+[Unreleased]: https://github.com/fact-sealevel/facts-total/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/fact-sealevel/facts-total/releases/tag/v0.1.0
