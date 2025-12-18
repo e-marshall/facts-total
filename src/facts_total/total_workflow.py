@@ -230,11 +230,11 @@ class WorkflowTotaler:
         ds = ds.sum(dim="file")
 
         # Define the missing value for the netCDF files
-        # nc_missing_value = np.nan  # np.iinfo(np.int16).min
-        # total_ds["sea_level_change"].attrs = {
-        #    "units": "mm",
-        #    "missing_value": nc_missing_value,
-        # }
+         nc_missing_value = np.nan  # np.iinfo(np.int16).min
+         total_ds["sea_level_change"].attrs = {
+            "units": "mm",
+            "missing_value": nc_missing_value,
+        }
         setattr(self, "totaled_ds", ds)
 
         return ds
