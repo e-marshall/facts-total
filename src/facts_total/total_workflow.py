@@ -1,7 +1,6 @@
 from typing import List
 import xarray as xr
 import numpy as np
-from pathlib import Path
 import click
 import logging
 
@@ -122,10 +121,7 @@ class WorkflowTotaler:
 
             # add source info along file dim
             file = ds.encoding["source"]
-            parent_dir = Path(file).parent.stem
-            fname = Path(file).with_suffix("").name
-            source = str(Path(parent_dir) / Path(fname))
-            ds["file"] = [source]
+            ds["file"] = [file]
 
             # Check that year steps are uniform over time dim
             ds = ds.expand_dims(["year_step"])
@@ -198,10 +194,17 @@ class WorkflowTotaler:
         # this is a hacky (temp) replacement for how its handled in facts1 using
         # os.listdir() for nc files in the experiment output dir
         source_cubes = combined_ds["file"].values.tolist()
-        i = 1
-        for cube in source_cubes:
-            combined_ds.attrs.update({f"cube {i}": cube})
-            i += 1
+        # i = 1
+        # for cube in source_cubes:
+        #    combined_ds.attrs.update({f"cube {i}": cube})
+        #    i += 1
+        combined_ds.attrs.update(
+            {
+                "source": "FACTS v2: Post-processed total among available contributors: {}".format(
+                    ",".join(source_cubes),
+                )
+            }
+        )
         setattr(self, "projections_ds", combined_ds)
         return combined_ds
 
