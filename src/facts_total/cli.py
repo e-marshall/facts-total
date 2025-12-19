@@ -68,5 +68,8 @@ def main(name, item, output_path, pyear_start, pyear_end, pyear_step):
     # Calc sum
     totaler.total_projections()
 
+    # Check that totals are correct
+    totaler.check_totaled_projections()
+
     # Write totaled projections to file
     totaler.write_totaled_projections(outpath=output_path)

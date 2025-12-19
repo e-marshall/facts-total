@@ -8,6 +8,10 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
+class TotalingError(Exception):
+    """Custom exception for errors during totaling process."""
+
+
 class WorkflowTotaler:
     """
     Handles totaling of sealevel projections from modules included in a workflow.
@@ -240,6 +244,26 @@ class WorkflowTotaler:
         setattr(self, "totaled_ds", ds)
         ds.attrs = ds_attrs
         return ds
+
+    def check_totaled_projections(self) -> bool:
+        ds_ls = []
+        for output in self.paths_list:
+            ds = xr.open_dataset(output)
+            ds = ds.expand_dims("file")
+            ds["file"] = [output]
+            ds_ls.append(ds)
+
+        manual_combined_ds = xr.concat(ds_ls, dim="file")
+        manual_totaled_ds = manual_combined_ds.sum(dim="file")
+        totaled_ds = getattr(self, "totaled_ds")
+
+        try:
+            xr.testing.assert_equal(manual_totaled_ds, totaled_ds)
+            logger.info(
+                "Totaled projections check passed: totaled dataset matches manual sum."
+            )
+        except TotalingError as e:
+            raise TotalingError(f"Totaled projections do not match: {e}") from e
 
     def write_totaled_projections(self, outpath: str):
         """
